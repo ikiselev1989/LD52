@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.9" tiledversion="1.9.2" orientation="orthogonal" renderorder="right-down" width="17" height="9" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="5">
+ <editorsettings>
+  <export target="//wsl.localhost/Ubuntu/home/gonzo/projects/LD52/public/maps/tutorial.tmx" format="tmx"/>
+ </editorsettings>
+ <tileset firstgid="1" source="tiles.tsx"/>
+ <layer id="1" name="bg" width="17" height="9">
+  <data encoding="csv">
+5,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,6,
+11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,
+11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,
+11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,
+11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,
+11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,
+11,11,11,11,11,11,8,8,11,11,11,11,11,11,11,11,11,
+11,11,11,11,11,11,8,8,11,11,11,11,11,11,11,11,11,
+9,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,10
+</data>
+ </layer>
+ <layer id="3" name="wheat" width="17" height="9">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,2,3,4,1,2,2,3,3,2,4,3,3,2,2,3,0,
+0,4,2,1,4,2,1,3,4,4,1,4,2,1,3,3,0,
+0,4,3,1,4,4,1,3,3,4,1,1,4,3,2,4,0,
+0,4,2,2,2,4,3,4,1,4,3,2,2,1,2,3,0,
+0,3,2,3,2,1,4,1,1,2,4,1,1,2,1,1,0,
+0,3,4,3,2,2,0,0,4,3,1,1,1,4,2,2,0,
+0,1,1,1,1,2,0,0,1,2,2,1,4,1,4,2,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <objectgroup id="2" name="obj">
+  <properties>
+   <property name="excalibur" type="bool" value="true"/>
+  </properties>
+  <object id="3" name="Fire" class="Fire" x="16" y="112" width="16" height="16"/>
+  <object id="4" name="Comb" class="Comb" x="96" y="96" width="32" height="48"/>
+ </objectgroup>
+</map>
