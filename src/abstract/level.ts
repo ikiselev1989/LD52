@@ -4,12 +4,16 @@ import {
 	BoundingBox,
 	Circle,
 	Color,
+	Font,
+	FontUnit,
 	ImageSource,
+	Label,
 	Line,
 	Scene,
 	ScreenElement,
 	Sprite,
 	SpriteSheet,
+	TextAlign,
 	Tile,
 	TileMap,
 	Vector,
@@ -148,34 +152,22 @@ export abstract class Level extends Scene {
 		}
 	}
 
-	public async countPoints() {
-		const notKilledTiles = this.wheatLayer.tiles.filter(tile => !tile.isKilled() && tile.getGraphics().length);
-
-		await Promise.all(
-			notKilledTiles.map((tile, index) => {
-				return new Promise<void>((resolve) => {
-					this.engine.clock.schedule(() => {
-						tile.addGraphic(<Sprite>this.sprites.getSprite(3, 1));
-						tile.kill();
-						this.points += 50;
-
-						resolve();
-					}, 25 * (index + 1));
-				});
-			}),
-		);
-
-		return this.points;
-	}
-
 	protected startFire() {
 		const fire = this.initFire();
 
 		if (fire) {
-			this.engine.clock.schedule(() => {
-				const tile = this.wheatLayer.getTileByPoint(new Vector(fire.x, fire.y));
+			let tiles: Tile[] = [];
 
-				this.fireLoop([tile]);
+			fire.forEach((fr => {
+				tiles = [
+					...tiles,
+					this.wheatLayer.getTileByPoint(new Vector(fr.x, fr.y)),
+				];
+
+			}));
+
+			this.engine.clock.schedule(() => {
+				this.fireLoop(tiles);
 			}, this.fireDelay);
 		}
 	}
@@ -187,9 +179,11 @@ export abstract class Level extends Scene {
 
 		this.player = new Actor({
 			x: x + (width || 0) / 2,
-			y: y + (height || 0) / 3,
+			y: y + (height || 0) / 2,
 			anchor: new Vector(0.5, 0.33),
 		});
+
+		this.player.rotation = combineObj?.rotation || 0;
 
 		this.add(this.player);
 
@@ -241,6 +235,54 @@ export abstract class Level extends Scene {
 		}
 	}
 
+	private async showCounts() {
+		const points = await this.countPoints();
+
+		requestAnimationFrame(() => {
+			const text = this.minPoints > points ? `Your score: ${points}\nTry again next time!` : `Well done! \nYour score: ${points}`;
+
+			const fontConfig = {
+				family: 'impact',
+				size: 24,
+				unit: FontUnit.Px,
+				color: this.minPoints > points ? Color.Red : Color.Green,
+				smoothing: false,
+				quality: 5,
+				textAlign: TextAlign.Center,
+				shadow: {
+					color: Color.Black,
+					offset: new Vector(0, 8),
+				},
+			};
+
+			this.engine.add(new Label({
+				pos: this.camera.pos,
+				text,
+				font: new Font(fontConfig),
+			}));
+		});
+	}
+
+	private async countPoints() {
+		const notKilledTiles = this.wheatLayer.tiles.filter(tile => !tile.isKilled() && tile.getGraphics().length);
+
+		await Promise.all(
+			notKilledTiles.map((tile, index) => {
+				return new Promise<void>((resolve) => {
+					this.engine.clock.schedule(() => {
+						tile.addGraphic(<Sprite>this.sprites.getSprite(3, 1));
+						tile.kill();
+						this.points += 50;
+
+						resolve();
+					}, 25 * (index + 1));
+				});
+			}),
+		);
+
+		return this.points;
+	}
+
 	private addPathClicker() {
 		const circle = new Circle({
 			radius: 4,
@@ -271,6 +313,8 @@ export abstract class Level extends Scene {
 		this.circleActor = new Actor({
 			width: 32,
 			height: 32,
+			x: this.player.pos.x,
+			y: this.player.pos.y,
 		});
 
 		this.circleActor.graphics.use(circle);
@@ -289,13 +333,16 @@ export abstract class Level extends Scene {
 		return this.findFireCenter(tiledObjectGroups.objects) || null;
 	}
 
-	private fireLoop(fires: Tile[]) {
+	private async fireLoop(fires: Tile[]) {
 		if (!fires.length) {
-			this.engine.emitGlobalEvent(Events.GAME_OVER);
 			this.gameOver = true;
 			this.lineActor.kill();
 			this.circleActor.kill();
 			this.player.actions.clearActions();
+
+			await this.showCounts();
+
+			this.engine.clock.schedule(() => this.engine.emitGlobalEvent(Events.GAME_OVER), 3000);
 			return;
 		}
 
@@ -335,7 +382,7 @@ export abstract class Level extends Scene {
 	}
 
 	private findFireCenter(objects: TiledObject[]) {
-		return objects.find(obj => obj.class === Objects.FIRE.toString());
+		return objects.filter(obj => obj.class === Objects.FIRE.toString());
 	}
 
 	private getNextFirePositionsWithWind(currentFirePos: Vector): Vector[] {

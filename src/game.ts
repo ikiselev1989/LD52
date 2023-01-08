@@ -4,7 +4,19 @@ import { Levels } from './constants/levels';
 import { Events } from './constants/events';
 import { BaseResources } from './constants/resources';
 import { Level1 } from './levels/level1';
-import { Level } from './abstract/level';
+import { Level4 } from './levels/level4';
+import { Level5 } from './levels/level5';
+import { Level2 } from './levels/level2';
+import { Level3 } from './levels/level3';
+
+const scenesList = [
+	Levels.TUTORIAL,
+	Levels.LEVEL1,
+	Levels.LEVEL2,
+	Levels.LEVEL3,
+	Levels.LEVEL4,
+	Levels.LEVEL5,
+];
 
 export class Game extends Engine {
 	constructor() {
@@ -28,19 +40,29 @@ export class Game extends Engine {
 			<Loadable<any>>BaseResources.get('wind'),
 			<Loadable<any>>BaseResources.get('tutorialMap'),
 			<Loadable<any>>BaseResources.get('level1Map'),
+			<Loadable<any>>BaseResources.get('level2Map'),
+			<Loadable<any>>BaseResources.get('level3Map'),
+			<Loadable<any>>BaseResources.get('level4Map'),
+			<Loadable<any>>BaseResources.get('level5Map'),
 		]);
 
 		this.addScene(Levels.TUTORIAL, new Tutorial());
 		this.addScene(Levels.LEVEL1, new Level1());
+		this.addScene(Levels.LEVEL2, new Level2());
+		this.addScene(Levels.LEVEL3, new Level3());
+		this.addScene(Levels.LEVEL4, new Level4());
+		this.addScene(Levels.LEVEL5, new Level5());
 
-		this.start(loader).then(() => this.goToScene(Levels.TUTORIAL));
+		this.start(loader).then(() => this.goToScene(<Levels>scenesList.shift()));
 	}
 
 	onInitialize(_engine: Engine) {
 		super.onInitialize(_engine);
 
 		this.addGlobalEvent(Events.GAME_OVER, async () => {
-			await this.showCountPoints();
+			const next = <Levels>scenesList.shift();
+
+			next && this.goToScene(next);
 		});
 	}
 
@@ -50,20 +72,5 @@ export class Game extends Engine {
 
 	public emitGlobalEvent(event: Events) {
 		document.dispatchEvent(new CustomEvent(event));
-	}
-
-	private async showCountPoints() {
-		const level = <Level>this.currentScene;
-		const points = await level.countPoints();
-
-		requestAnimationFrame(() => {
-			console.log(points);
-
-			if (level.minPoints > points) {
-				alert('try again!');
-			} else {
-				alert('well done!');
-			}
-		});
 	}
 }
