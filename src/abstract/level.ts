@@ -1,6 +1,7 @@
 import {
 	Actor,
 	AnimationStrategy,
+	BoundingBox,
 	Circle,
 	Color,
 	ImageSource,
@@ -43,6 +44,7 @@ export abstract class Level extends Scene {
 	private line2: any;
 	private lineActor!: Actor;
 	private gameOver!: boolean;
+	private mapBoundingBox!: BoundingBox;
 
 	private get isBusy() {
 		return !this.player?.actions.getQueue().isComplete();
@@ -56,6 +58,15 @@ export abstract class Level extends Scene {
 
 		this.wheatLayer = <TileMap>this.tileMaps.find(layer => layer.name === Layers.WHEAT.toString());
 		this.startFire();
+
+		const { columns, tileWidth: wlTileWidth, rows, tileHeight: wlTileHeight } = this.wheatLayer;
+
+		this.mapBoundingBox = new BoundingBox({
+			left: wlTileWidth,
+			top: wlTileHeight,
+			right: (columns - 1) * wlTileWidth,
+			bottom: (rows - 1) * wlTileHeight,
+		});
 
 		const { width, tileWidth, height, tileHeight } = this.tiledMap.data;
 
@@ -112,7 +123,9 @@ export abstract class Level extends Scene {
 
 	onPreUpdate() {
 		if (this.engine.input.pointers.primary.lastWorldPos && this.circleActor && !this.gameOver) {
-			this.showPath(this.pathClickerAvailable && !this.isBusy ? this.engine.input.pointers.primary.lastWorldPos : this.circleActor.pos);
+			const dest = this.pathClickerAvailable && !this.isBusy && this.mapBoundingBox.contains(this.engine.input.pointers.primary.lastWorldPos) ? this.engine.input.pointers.primary.lastWorldPos : this.circleActor.pos;
+
+			this.showPath(dest);
 		}
 
 		if (this.player?.pos && this.wheatLayer) {
@@ -282,6 +295,7 @@ export abstract class Level extends Scene {
 			this.gameOver = true;
 			this.lineActor.kill();
 			this.circleActor.kill();
+			this.player.actions.clearActions();
 			return;
 		}
 
