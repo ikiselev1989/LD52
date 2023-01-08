@@ -1,13 +1,13 @@
 import { Level } from '../abstract/level';
-import { Loader } from 'excalibur';
 import { TiledMapResource } from '@excaliburjs/plugin-tiled';
 import { Wind } from '../constants/wind';
+import { BaseResources } from '../constants/resources';
 
 export class Level1 extends Level {
-	public tiledMap = new TiledMapResource('/maps/level1.tmx');
-	public loader = new Loader([this.tiledMap]);
+	public tiledMap = <TiledMapResource>BaseResources.get('level1Map');
+	public minPoints = 5500;
 
 	protected pathClickerAvailable = true;
-	protected wind = Wind.SW;
+	protected wind = Wind.S;
 	protected cameraZoom = 1.6;
 }

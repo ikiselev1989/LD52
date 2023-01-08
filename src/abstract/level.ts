@@ -5,7 +5,6 @@ import {
 	Color,
 	ImageSource,
 	Line,
-	Loader,
 	Scene,
 	ScreenElement,
 	Sprite,
@@ -27,7 +26,8 @@ export abstract class Level extends Scene {
 	declare engine: Game;
 
 	abstract tiledMap: TiledMapResource;
-	abstract loader: Loader;
+
+	minPoints: number = 0;
 	protected player!: Actor;
 	protected wind: Wind = Wind.CALM;
 	protected windSpeed: number = 1;
@@ -35,20 +35,26 @@ export abstract class Level extends Scene {
 	protected pathClickerAvailable = false;
 	protected cameraZoom = 1;
 	protected actorSpeed: number = 25;
+	protected points!: number;
 	private fireDelay: number = 1000;
 	private wheatLayer!: TileMap;
 	private circleActor!: Actor;
 	private line: any;
 	private line2: any;
 	private lineActor!: Actor;
+	private gameOver!: boolean;
+
+	private get isBusy() {
+		return !this.player?.actions.getQueue().isComplete();
+	}
 
 	public async onInitialize() {
-		this.loader.suppressPlayButton = true;
-
-		await this.loader.load();
+		this.points = 0;
+		this.gameOver = false;
 
 		this.tiledMap.addTiledMapToScene(this);
-		this.wheatLayer = <TileMap>this.tiledMap.getTileMapLayers().find(layer => layer.name === Layers.WHEAT.toString());
+
+		this.wheatLayer = <TileMap>this.tileMaps.find(layer => layer.name === Layers.WHEAT.toString());
 		this.startFire();
 
 		const { width, tileWidth, height, tileHeight } = this.tiledMap.data;
@@ -105,8 +111,8 @@ export abstract class Level extends Scene {
 	}
 
 	onPreUpdate() {
-		if (this.engine.input.pointers.primary.lastWorldPos && this.circleActor) {
-			this.showPath(this.pathClickerAvailable ? this.engine.input.pointers.primary.lastWorldPos : this.circleActor.pos);
+		if (this.engine.input.pointers.primary.lastWorldPos && this.circleActor && !this.gameOver) {
+			this.showPath(this.pathClickerAvailable && !this.isBusy ? this.engine.input.pointers.primary.lastWorldPos : this.circleActor.pos);
 		}
 
 		if (this.player?.pos && this.wheatLayer) {
@@ -127,6 +133,26 @@ export abstract class Level extends Scene {
 				this.player.graphics.use(BaseResources.get('animations')!.data.getAnimation('Combine'));
 			}
 		}
+	}
+
+	public async countPoints() {
+		const notKilledTiles = this.wheatLayer.tiles.filter(tile => !tile.isKilled() && tile.getGraphics().length);
+
+		await Promise.all(
+			notKilledTiles.map((tile, index) => {
+				return new Promise<void>((resolve) => {
+					this.engine.clock.schedule(() => {
+						tile.addGraphic(<Sprite>this.sprites.getSprite(3, 1));
+						tile.kill();
+						this.points += 50;
+
+						resolve();
+					}, 25 * (index + 1));
+				});
+			}),
+		);
+
+		return this.points;
 	}
 
 	protected startFire() {
@@ -162,8 +188,6 @@ export abstract class Level extends Scene {
 	protected async moveTo(dest: Vector) {
 		if (!this.player.actions.getQueue().isComplete()) return;
 
-		this.pathClickerAvailable = false;
-
 		let { x, y } = dest;
 
 		if (x === this.player.pos.x || y === this.player.pos.y) {
@@ -173,8 +197,6 @@ export abstract class Level extends Scene {
 				.moveTo([0, 180].includes(this.player.rotation * 180 / Math.PI) ? new Vector(this.player.pos.x, y) : new Vector(x, this.player.pos.y), this.actorSpeed)
 				.moveTo(dest, this.actorSpeed).toPromise();
 		}
-
-		this.pathClickerAvailable = true;
 	}
 
 	protected showPath(dest: Vector) {
@@ -242,10 +264,10 @@ export abstract class Level extends Scene {
 
 		this.add(this.circleActor);
 
-		this.circleActor.on('pointerup', () => {
-			if (!this.pathClickerAvailable) return;
+		this.circleActor.on('pointerup', async () => {
+			if (!this.pathClickerAvailable || this.isBusy || this.gameOver) return;
 
-			this.moveTo(this.circleActor.pos);
+			await this.moveTo(this.circleActor.pos);
 		});
 	}
 
@@ -257,6 +279,9 @@ export abstract class Level extends Scene {
 	private fireLoop(fires: Tile[]) {
 		if (!fires.length) {
 			this.engine.emitGlobalEvent(Events.GAME_OVER);
+			this.gameOver = true;
+			this.lineActor.kill();
+			this.circleActor.kill();
 			return;
 		}
 
@@ -409,6 +434,8 @@ export abstract class Level extends Scene {
 			tile.kill();
 			tile.clearGraphics();
 			tile.addGraphic(<Sprite>this.sprites.getSprite(3, 1));
+
+			this.points += 50;
 		}
 	}
 }

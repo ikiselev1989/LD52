@@ -4,6 +4,7 @@ import { Levels } from './constants/levels';
 import { Events } from './constants/events';
 import { BaseResources } from './constants/resources';
 import { Level1 } from './levels/level1';
+import { Level } from './abstract/level';
 
 export class Game extends Engine {
 	constructor() {
@@ -25,6 +26,8 @@ export class Game extends Engine {
 			<Loadable<any>>BaseResources.get('animations'),
 			<Loadable<any>>BaseResources.get('tiles'),
 			<Loadable<any>>BaseResources.get('wind'),
+			<Loadable<any>>BaseResources.get('tutorialMap'),
+			<Loadable<any>>BaseResources.get('level1Map'),
 		]);
 
 		this.addScene(Levels.TUTORIAL, new Tutorial());
@@ -36,8 +39,8 @@ export class Game extends Engine {
 	onInitialize(_engine: Engine) {
 		super.onInitialize(_engine);
 
-		this.addGlobalEvent(Events.GAME_OVER, () => {
-			alert('game over');
+		this.addGlobalEvent(Events.GAME_OVER, async () => {
+			await this.showCountPoints();
 		});
 	}
 
@@ -47,5 +50,20 @@ export class Game extends Engine {
 
 	public emitGlobalEvent(event: Events) {
 		document.dispatchEvent(new CustomEvent(event));
+	}
+
+	private async showCountPoints() {
+		const level = <Level>this.currentScene;
+		const points = await level.countPoints();
+
+		requestAnimationFrame(() => {
+			console.log(points);
+
+			if (level.minPoints > points) {
+				alert('try again!');
+			} else {
+				alert('well done!');
+			}
+		});
 	}
 }

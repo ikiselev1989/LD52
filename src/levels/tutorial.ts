@@ -1,10 +1,11 @@
-import { Loader, Vector } from 'excalibur';
+import { Vector } from 'excalibur';
 import { TiledMapResource } from '@excaliburjs/plugin-tiled';
 import { Level } from '../abstract/level';
+import { BaseResources } from '../constants/resources';
 
 export class Tutorial extends Level {
-	public tiledMap = new TiledMapResource('/maps/tutorial.tmx');
-	public loader = new Loader([this.tiledMap]);
+	public tiledMap = <TiledMapResource>BaseResources.get('tutorialMap');
+	protected cameraZoom = 2;
 
 	async onInitialize(): Promise<void> {
 		await super.onInitialize();
@@ -12,6 +13,6 @@ export class Tutorial extends Level {
 		const dest = new Vector(16, 32);
 
 		this.showPath(dest);
-		this.moveTo(dest);
+		await this.moveTo(dest);
 	}
 }
