@@ -1,7 +1,10 @@
 import {
 	Actor,
 	AnimationStrategy,
+	Circle,
+	Color,
 	ImageSource,
+	Line,
 	Loader,
 	Scene,
 	Sprite,
@@ -29,6 +32,12 @@ export abstract class Level extends Scene {
 	protected windSpeed: number = 1;
 	protected sprites!: SpriteSheet;
 	private wheatLayer!: TileMap;
+	private circleActor!: Actor;
+	private actorSpeed: number = 25;
+	private line: any;
+	private line2: any;
+	private lineActor!: Actor;
+	private pathClickerAvailable = false;
 
 	public async onInitialize() {
 		this.loader.suppressPlayButton = true;
@@ -56,9 +65,15 @@ export abstract class Level extends Scene {
 				spriteHeight: 16,
 			},
 		});
+
+		this.addPathClicker();
 	}
 
 	onPreUpdate() {
+		if (this.engine.input.pointers.primary.lastWorldPos && this.circleActor) {
+			this.showPath(this.pathClickerAvailable ? this.engine.input.pointers.primary.lastWorldPos : this.circleActor.pos);
+		}
+
 		if (this.player?.pos && this.wheatLayer) {
 			this.rotatePlayer();
 
@@ -105,12 +120,92 @@ export abstract class Level extends Scene {
 		const animations = BaseResources.get('animations');
 
 		this.player.graphics.use(animations!.data.getAnimation('CombineIdle'));
+	}
 
-		const speed = 25;
+	protected moveTo(dest: Vector) {
+		if (!this.player.actions.getQueue().isComplete()) return;
 
-		this.player.actions.moveBy(new Vector(0, -16 * 5), speed)
-			.moveBy(new Vector(-5 * 16, 0), speed)
-		;
+		let { x, y } = dest;
+
+		if (x === this.player.pos.x || y === this.player.pos.y) {
+			this.player.actions.moveTo(dest, this.actorSpeed);
+		} else {
+			this.player.actions
+				.moveTo([0, 180].includes(this.player.rotation * 180 / Math.PI) ? new Vector(this.player.pos.x, y) : new Vector(x, this.player.pos.y), this.actorSpeed)
+				.moveTo(dest, this.actorSpeed);
+		}
+	}
+
+	protected showPath(dest: Vector) {
+		let { x, y } = dest;
+		let { x: playerX, y: playerY } = this.player.pos;
+
+		x = x % 16 < 8 ? (x - x % 16) : x + (16 - x % 16);
+		y = y % 16 < 8 ? (y - y % 16) : y + (16 - y % 16);
+
+		this.circleActor.pos = new Vector(x, y);
+
+		this.lineActor.pos = this.player.pos;
+
+		if (this.lineActor.pos.x === this.circleActor.pos.x || this.lineActor.pos.y === this.circleActor.pos.y) {
+			this.line2.end = this.line2.start = new Vector(0, 0);
+			this.line.start = this.player.pos.sub(this.lineActor.pos);
+			this.line.end = this.circleActor.pos.sub(this.lineActor.pos);
+		} else {
+			const { rotation } = this.player;
+			const lineEnd = [0, 180].includes(rotation * 180 / Math.PI) ? new Vector(playerX, y) : new Vector(x, playerY);
+
+			this.line.end = this.line.start = new Vector(0, 0);
+
+			this.line.start = this.player.pos.sub(this.lineActor.pos);
+			this.line.end = lineEnd.sub(this.lineActor.pos);
+
+			this.line2.start = this.line.end;
+			this.line2.end = this.circleActor.pos.sub(this.lineActor.pos);
+		}
+	}
+
+	private addPathClicker() {
+		const circle = new Circle({
+			radius: 4,
+			color: Color.White,
+			quality: 5,
+			smoothing: false,
+		});
+
+		this.line = new Line({
+			color: Color.White,
+			start: new Vector(0, 0),
+			end: new Vector(0, 0),
+		});
+
+		this.line2 = new Line({
+			color: Color.White,
+			start: new Vector(0, 0),
+			end: new Vector(0, 0),
+		});
+
+		this.lineActor = new Actor();
+
+		this.lineActor.graphics.use(this.line);
+		this.lineActor.graphics.add(this.line2);
+
+		this.add(this.lineActor);
+
+		this.circleActor = new Actor({
+			width: 32,
+			height: 32,
+		});
+
+		this.circleActor.graphics.use(circle);
+
+		this.add(this.circleActor);
+
+		this.circleActor.on('pointerup', () => {
+			if (!this.pathClickerAvailable) return;
+
+			this.moveTo(this.circleActor.pos);
+		});
 	}
 
 	private initFire() {
@@ -246,18 +341,22 @@ export abstract class Level extends Scene {
 
 			if (x < 0) {
 				this.player.rotation = -90 * Math.PI / 180;
+				return;
 			}
 
 			if (x > 0) {
 				this.player.rotation = 90 * Math.PI / 180;
+				return;
 			}
 
 			if (y > 0) {
 				this.player.rotation = 180 * Math.PI / 180;
+				return;
 			}
 
 			if (y < 0) {
 				this.player.rotation = 0;
+				return;
 			}
 		}
 	}
