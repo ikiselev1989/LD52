@@ -32,13 +32,15 @@ export abstract class Level extends Scene {
 	protected wind: Wind = Wind.CALM;
 	protected windSpeed: number = 1;
 	protected sprites!: SpriteSheet;
+	protected pathClickerAvailable = false;
+	protected cameraZoom = 1;
+	protected actorSpeed: number = 25;
+	private fireDelay: number = 1000;
 	private wheatLayer!: TileMap;
 	private circleActor!: Actor;
-	private actorSpeed: number = 25;
 	private line: any;
 	private line2: any;
 	private lineActor!: Actor;
-	private pathClickerAvailable = false;
 
 	public async onInitialize() {
 		this.loader.suppressPlayButton = true;
@@ -53,7 +55,7 @@ export abstract class Level extends Scene {
 
 		this.camera.x = width / 2 * tileWidth;
 		this.camera.y = height / 2 * tileHeight;
-		this.camera.zoom = 2;
+		this.camera.zoom = this.cameraZoom;
 
 		this.addPlayer();
 
@@ -131,9 +133,11 @@ export abstract class Level extends Scene {
 		const fire = this.initFire();
 
 		if (fire) {
-			const tile = this.wheatLayer.getTileByPoint(new Vector(fire.x, fire.y));
+			this.engine.clock.schedule(() => {
+				const tile = this.wheatLayer.getTileByPoint(new Vector(fire.x, fire.y));
 
-			this.fireLoop([tile]);
+				this.fireLoop([tile]);
+			}, this.fireDelay);
 		}
 	}
 
@@ -155,18 +159,22 @@ export abstract class Level extends Scene {
 		this.player.graphics.use(animations!.data.getAnimation('CombineIdle'));
 	}
 
-	protected moveTo(dest: Vector) {
+	protected async moveTo(dest: Vector) {
 		if (!this.player.actions.getQueue().isComplete()) return;
+
+		this.pathClickerAvailable = false;
 
 		let { x, y } = dest;
 
 		if (x === this.player.pos.x || y === this.player.pos.y) {
-			this.player.actions.moveTo(dest, this.actorSpeed);
+			await this.player.actions.moveTo(dest, this.actorSpeed).toPromise();
 		} else {
-			this.player.actions
+			await this.player.actions
 				.moveTo([0, 180].includes(this.player.rotation * 180 / Math.PI) ? new Vector(this.player.pos.x, y) : new Vector(x, this.player.pos.y), this.actorSpeed)
-				.moveTo(dest, this.actorSpeed);
+				.moveTo(dest, this.actorSpeed).toPromise();
 		}
+
+		this.pathClickerAvailable = true;
 	}
 
 	protected showPath(dest: Vector) {

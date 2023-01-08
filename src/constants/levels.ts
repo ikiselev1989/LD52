@@ -1,3 +1,4 @@
 export enum Levels {
-	TUTORIAL = 'tutorial'
+	TUTORIAL = 'tutorial',
+	LEVEL1 = 'level1'
 }

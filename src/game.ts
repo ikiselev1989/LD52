@@ -3,6 +3,7 @@ import { Tutorial } from './levels/tutorial';
 import { Levels } from './constants/levels';
 import { Events } from './constants/events';
 import { BaseResources } from './constants/resources';
+import { Level1 } from './levels/level1';
 
 export class Game extends Engine {
 	constructor() {
@@ -27,8 +28,9 @@ export class Game extends Engine {
 		]);
 
 		this.addScene(Levels.TUTORIAL, new Tutorial());
+		this.addScene(Levels.LEVEL1, new Level1());
 
-		this.start(loader).then(() => this.goToScene(Levels.TUTORIAL));
+		this.start(loader).then(() => this.goToScene(Levels.LEVEL1));
 	}
 
 	onInitialize(_engine: Engine) {
