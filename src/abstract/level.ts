@@ -7,6 +7,7 @@ import {
 	Line,
 	Loader,
 	Scene,
+	ScreenElement,
 	Sprite,
 	SpriteSheet,
 	Tile,
@@ -67,6 +68,38 @@ export abstract class Level extends Scene {
 		});
 
 		this.addPathClicker();
+
+		const wind = new ScreenElement({
+			width: 16,
+			height: 16,
+			x: 8,
+			y: 8,
+			scale: new Vector(20 / 16, 20 / 16),
+		});
+
+		const windSprites = SpriteSheet.fromImageSource({
+			image: <ImageSource>BaseResources.get('wind'),
+			grid: {
+				rows: 3,
+				columns: 3,
+				spriteWidth: 16,
+				spriteHeight: 16,
+			},
+		});
+
+		wind.graphics.add(Wind.NW.toString(), <Sprite>windSprites.getSprite(0, 0));
+		wind.graphics.add(Wind.N.toString(), <Sprite>windSprites.getSprite(1, 0));
+		wind.graphics.add(Wind.NE.toString(), <Sprite>windSprites.getSprite(2, 0));
+		wind.graphics.add(Wind.W.toString(), <Sprite>windSprites.getSprite(0, 1));
+		wind.graphics.add(Wind.CALM.toString(), <Sprite>windSprites.getSprite(1, 1));
+		wind.graphics.add(Wind.E.toString(), <Sprite>windSprites.getSprite(2, 1));
+		wind.graphics.add(Wind.SW.toString(), <Sprite>windSprites.getSprite(0, 2));
+		wind.graphics.add(Wind.S.toString(), <Sprite>windSprites.getSprite(1, 2));
+		wind.graphics.add(Wind.SE.toString(), <Sprite>windSprites.getSprite(2, 2));
+
+		this.engine.add(wind);
+
+		wind.graphics.show(this.wind.toString());
 	}
 
 	onPreUpdate() {

@@ -20,7 +20,11 @@ export class Game extends Engine {
 
 		this.setAntialiasing(false);
 
-		const loader = new Loader([<Loadable<any>>BaseResources.get('animations'), <Loadable<any>>BaseResources.get('tiles')]);
+		const loader = new Loader([
+			<Loadable<any>>BaseResources.get('animations'),
+			<Loadable<any>>BaseResources.get('tiles'),
+			<Loadable<any>>BaseResources.get('wind'),
+		]);
 
 		this.addScene(Levels.TUTORIAL, new Tutorial());
 

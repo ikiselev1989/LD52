@@ -7,3 +7,4 @@ export const BaseResources: ResourceMap = new Map();
 
 BaseResources.set('animations', new AsepriteResource('/animations.json'));
 BaseResources.set('tiles', new ImageSource('/tiles.png'));
+BaseResources.set('wind', new ImageSource('/wind.png'));
