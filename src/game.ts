@@ -33,7 +33,7 @@ export class Game extends Engine {
 		this.addScene(Levels.TUTORIAL, new Tutorial());
 		this.addScene(Levels.LEVEL1, new Level1());
 
-		this.start(loader).then(() => this.goToScene(Levels.LEVEL1));
+		this.start(loader).then(() => this.goToScene(Levels.TUTORIAL));
 	}
 
 	onInitialize(_engine: Engine) {

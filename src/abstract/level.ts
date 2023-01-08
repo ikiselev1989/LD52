@@ -37,7 +37,7 @@ export abstract class Level extends Scene {
 	protected cameraZoom = 1;
 	protected actorSpeed: number = 25;
 	protected points!: number;
-	private fireDelay: number = 1000;
+	protected fireDelay: number = 1000;
 	private wheatLayer!: TileMap;
 	private circleActor!: Actor;
 	private line: any;
